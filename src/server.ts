@@ -4,6 +4,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRouter from "./routes/auth";
 import mongoose from "mongoose";
+import { Request, Response, NextFunction } from "express";
+import AppError from "./utils/AppError";
 
 dotenv.config();
 
@@ -25,6 +27,21 @@ mongoose
   .catch((e: Error) => console.log(e));
 
 app.use("/api/auth", authRouter);
+
+app.all("*", (req: Request, res: Response, next: NextFunction) => {
+  next(new AppError(`Cannot find route ${req.originalUrl} on the server`, 404));
+});
+
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  // Error handling middleware
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || "error";
+
+  return res.status(err.statusCode).json({
+    status: err.status,
+    message: err.message,
+  });
+});
 
 const port: number = parseInt(process.env.PORT || "5000", 10);
 
